@@ -7,41 +7,44 @@ using Test.Classes;
 
 namespace Test
 {
-    class InputAPI
+    class MutlipleChoice
     {
-        public static string[] GetPlayerData()
-        {
-            return null;
-        }
-
-        public static GameType GetGameType()
-        {
-            int selected = ShowMultipleChoice("Choose GameType :", Enum.GetNames(typeof(GameType)));
-            return (GameType)
-                Enum.GetValues(typeof(GameType)).GetValue(selected);
-        }
-
         private static void RenderList(string title, string[] args, int highlighted)
         {
+            Console.ResetColor();
+
             Console.WriteLine("{0} :", title);
             RenderList(args, highlighted);
         }
 
-        private static void RenderList(string[] strings, int highlighted)
+        private static void RenderList(string[] strings, int selected)
         {
             for(int i = 0; i<strings.Length; i++)
             {
-                Console.WriteLine("[{0}] {1}", highlighted == i ? 'X' : ' ', strings[i]);
+                if (i == selected)
+                {
+                    Console.ForegroundColor = ConsoleColor.Black;
+                    Console.BackgroundColor = ConsoleColor.Gray;
+                }
+                else
+                {
+                    Console.ForegroundColor = ConsoleColor.Gray;
+                    Console.BackgroundColor = ConsoleColor.Black;
+                }
+
+                Console.WriteLine(strings[i]);
             }
         }
 
-        public static int ShowMultipleChoice(string title, params string[] choices)
+        public static int Show(string title, params string[] choices)
         {
             int selected = 0;
             ConsoleKeyInfo info;
+            int line = Console.CursorTop;
 
             do
             {
+                Console.SetCursorPosition(0, line);
                 RenderList(title, choices, selected);
 
                 info = Console.ReadKey();

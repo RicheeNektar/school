@@ -9,11 +9,53 @@ namespace Test
 {
     class Program
     {
+        private static bool isRunning = true;
+        private static string[] commands = {
+            "Create Game",
+            "Load Game",
+            "Exit"
+        };
+
         static void Main(string[] args)
         {
-            InputAPI.GetGameType();
+            do
+            {
+                Console.Clear();
 
-            Console.ReadLine();
+                int item = MutlipleChoice.Show("Main Menu", commands);
+                HandleInput(item);
+            } while (isRunning);
+        }
+
+        private static void HandleInput(int command)
+        {
+            switch(command)
+            {
+                case 0:
+                    CreateGame();
+                    break;
+
+                case 1:
+                    LoadGame();
+                    break;
+
+                case 2:
+                    isRunning = false;
+                    break;
+
+                default:
+                    throw new Exception("Unknown Command");
+            }
+        }
+
+        private static void CreateGame()
+        {
+
+        }
+
+        private static void LoadGame()
+        {
+
         }
     }
 }
