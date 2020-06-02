@@ -8,10 +8,10 @@ using Test.InputAPI;
 
 namespace Test
 {
-    class Program
+    public class Program
     {
         private static bool isRunning = true;
-        private static string[] commands = {
+        private static readonly string[] commands = {
             "Create Game",
             "Load Game",
             "Exit"
@@ -19,53 +19,28 @@ namespace Test
 
         static void Main(string[] args)
         {
+            Console.CursorVisible = false;
+            Load();
+            
             do
             {
                 Console.Clear();
 
-                int item = MultipleChoice.Show("Main Menu", commands);
+                int item = MultipleChoice.Show("Choose an Action", commands);
                 Console.Clear();
 
-                HandleInput(item);
+                Controller.HandleInput(item);
             } while (isRunning);
         }
 
-        private static void HandleInput(int command)
+        private static void Load()
         {
-            switch(command)
-            {
-                case 0:
-                    CreateGame();
-                    break;
-
-                case 1:
-                    LoadGame();
-                    break;
-
-                case 2:
-                    isRunning = false;
-                    break;
-
-                default:
-                    throw new Exception("Unknown Command");
-            }
+            Defaults.GetColors();
         }
 
-        private static void CreateGame()
+        public static void Terminate()
         {
-            int selected = MultipleChoice.Show("Select Game", GameTypeMethods.GetAllFullNames());
-            Console.WriteLine();
-
-            int players = NumberInput.Show("How many Players", 2, 6, 2);
-            Console.WriteLine();
-
-            string[] names = NameEditor.RequestBatch(players);
-            Console.WriteLine();
-        }
-
-        private static void LoadGame()
-        {
-
+            isRunning = false;
         }
     }
 }

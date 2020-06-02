@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Test.Classes;
+using Test.InputAPI;
 
 namespace Test
 {
@@ -23,13 +24,12 @@ namespace Test
             {
                 if (i == selected)
                 {
-                    Console.ForegroundColor = ConsoleColor.Black;
-                    Console.BackgroundColor = ConsoleColor.Gray;
+                    Console.ForegroundColor = Defaults.Background;
+                    Console.BackgroundColor = Defaults.Foreground;
                 }
                 else
                 {
-                    Console.ForegroundColor = ConsoleColor.Gray;
-                    Console.BackgroundColor = ConsoleColor.Black;
+                    Console.ResetColor();
                 }
 
                 Console.WriteLine(strings[i]);
@@ -40,11 +40,11 @@ namespace Test
         {
             int selected = 0;
             ConsoleKeyInfo info;
-            int line = Console.CursorTop;
+            int cursorTop = Console.CursorTop;
 
             do
             {
-                Console.SetCursorPosition(0, line);
+                Console.SetCursorPosition(0, cursorTop);
                 RenderList(title, choices, selected);
                 Console.ResetColor();
 
@@ -53,12 +53,16 @@ namespace Test
                 switch (info.Key)
                 {
                     case ConsoleKey.UpArrow:
-                        if (selected > 0) selected--;
+                        selected--;
+                        if (selected < 0) selected = choices.Length - 1;
                         break;
+                    
                     case ConsoleKey.DownArrow:
-                        if (selected < choices.Length-1) selected++;
+                        selected++;
+                        if (selected > choices.Length) selected = 0;
                         break;
                 }
+                
             } while (info.Key != ConsoleKey.Enter);
 
             Console.ResetColor();

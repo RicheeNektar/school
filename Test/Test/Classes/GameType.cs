@@ -15,11 +15,40 @@ namespace Test.Classes
     public static class GameTypeMethods
     {
         private static string[] _fullNames;
-        private static Dictionary<GameType, int[]> _playerRanges;
+        private static Dictionary<GameType, int[]> _playerRanges = new Dictionary<GameType, int[]>()
+        {
+            [GameType.P10] = new [] {2, 6},
+            [GameType.WIZ] = new [] {3, 6}
+        };
 
+        public static int Minimum(this GameType type)
+        {
+            return _playerRanges[type][0];
+        }
+
+        public static int Maximum(this GameType type)
+        {
+            return _playerRanges[type][1];
+        }
+        
         public static byte[] ToByteArray(this GameType type)
         {
             return Encoding.UTF8.GetBytes(type.ToString());
+        }
+
+        public static dynamic CreateGame(this GameType type, string[] names)
+        {
+            switch (type)
+            {
+                case GameType.P10:
+                    return new Phase10.Game(names);
+                
+                case GameType.WIZ:
+                    return new Phase10.Game(names);
+                
+                default:
+                    return null;
+            }
         }
 
         public static string[] GetAllFullNames()
@@ -42,7 +71,7 @@ namespace Test.Classes
             return _fullNames;
         }
 
-        public static string GetFullName(this GameType type)
+        private static string GetFullName(this GameType type)
         {
             switch(type)
             {

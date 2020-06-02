@@ -46,8 +46,9 @@
     <Compile Include="Classes\GameType.cs" />
     <Compile Include="Classes\Phase10.cs" />
     <Compile Include="Classes\Wizard.cs" />
-    <Compile Include="Game.cs" />
-    <Compile Include="InputAPI\NameEditor.cs" />
+    <Compile Include="Controller.cs" />
+    <Compile Include="InputAPI\Defaults.cs" />
+    <Compile Include="InputAPI\LineEditor.cs" />
     <Compile Include="InputAPI\MultipleChoice.cs" />
     <Compile Include="InputAPI\NumberInput.cs" />
     <Compile Include="Program.cs" />

@@ -22,10 +22,10 @@ namespace Test.InputAPI
             Console.WriteLine("{0} :\n[{1}{2}{3}] : {4}", title, preChars, BAR, subChars, current);
         }
 
-        public static int Show(string title, int min, int max, int start)
+        public static int Show(string title, int min, int max, int start = -1)
         {
             int cursorTop = Console.CursorTop;
-            int current = start;
+            int current = start > -1 ? start : min;
             ConsoleKeyInfo info;
 
             do
