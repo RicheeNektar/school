@@ -9,14 +9,13 @@ namespace Test.Classes
 {
     class Wizard
     {
-        private class Player
+        public class Player
         {
             private byte[][] _guesses = { };
-            private readonly string _name;
 
             public Player(string name)
             {
-                _name = name;
+                Name = name;
             }
 
             public void addTrickGuess(byte tricks)
@@ -33,7 +32,7 @@ namespace Test.Classes
                 roundGuess[1] = tricks;
             }
 
-            public int Points => _guesses.Sum((byte[] roundGuess) =>
+            public int Points => _guesses.Sum(roundGuess =>
             {
                 byte guess = roundGuess[0];
                 byte actual = roundGuess[1];
@@ -48,14 +47,13 @@ namespace Test.Classes
                 }
             });
 
-            public string Name => _name;
+            public string Name { get; }
         }
 
         public class Game
         {
             private const GameType TYPE = GameType.WIZ;
             private Player[] _players;
-            
 
             public Game(string[] names)
             {
@@ -67,26 +65,44 @@ namespace Test.Classes
                     _players[i] = new Player(names[i]);
                 }
             }
+            
+            private string[] GetNames()
+            {
+                string[] returned = new string[_players.Length];
+                for (int i = 0; i < _players.Length; i++)
+                {
+                    returned[i] = _players[i].Name;
+                }
+
+                return returned;
+            }
 
             public void EnterGuessTricks()
             {
-                string[] names = new string[_players.Length];
-                for (int i = 0; i < _players.Length; i++)
-                {
-                    names[i] = _players[i].Name;
-                }
-                
+                string[] names = GetNames();
                 int[] guesses = LineEditor.RequestIntBatch("Enter Guesses", _players.Length, names, 0, 255);
 
-                for (int i = 0; i < _players.Length; i++)
+                if (guesses != null)
                 {
-                    _players[i].addTrickGuess((byte) guesses[i]);
+                    for (int i = 0; i < _players.Length; i++)
+                    {
+                        _players[i].addTrickGuess((byte) guesses[i]);
+                    }
                 }
             }
 
             public void EnterActualTricks()
             {
-                
+                string[] names = GetNames();
+                int[] actual = LineEditor.RequestIntBatch("Enter Guesses", _players.Length, names, 0, 255);
+
+                if (actual != null)
+                {
+                    for (int i = 0; i < _players.Length; i++)
+                    {
+                        _players[i].setActualTricks((byte) actual[i]);
+                    }
+                }
             }
 
             public string[] Commands { get; } =

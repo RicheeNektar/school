@@ -16,8 +16,8 @@ namespace Test.InputAPI
             float barPerc = (float) (current - min) / (max - min);
             int barPos = (int)(barPerc * length);
 
-            string preChars = new string(new char[barPos]).Replace('\0', FILLER);
-            string subChars = new string(new char[length - barPos]).Replace('\0', FILLER);
+            string preChars = new string(Enumerable.Repeat(FILLER, barPos).ToArray());
+            string subChars = new string(Enumerable.Repeat(FILLER, length - barPos).ToArray());
             
             Console.WriteLine("{0} :\n[{1}{2}{3}] : {4}", title, preChars, BAR, subChars, current);
         }

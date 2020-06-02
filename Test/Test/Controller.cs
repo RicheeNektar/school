@@ -40,8 +40,11 @@ namespace Test
             string[] names = LineEditor.RequestStringBatch("Enter player names", players);
             Console.Clear();
 
-            dynamic game = gameType.CreateGame(names);
-            MainMenu(game);
+            if (names != null)
+            {
+                dynamic game = gameType.CreateGame(names);
+                MainMenu(game);
+            }
         }
 
         private static void LoadGame()

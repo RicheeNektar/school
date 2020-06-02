@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace Test.Classes
 {
@@ -15,7 +13,7 @@ namespace Test.Classes
     public static class GameTypeMethods
     {
         private static string[] _fullNames;
-        private static Dictionary<GameType, int[]> _playerRanges = new Dictionary<GameType, int[]>()
+        private static readonly Dictionary<GameType, int[]> _playerRanges = new Dictionary<GameType, int[]>()
         {
             [GameType.P10] = new [] {2, 6},
             [GameType.WIZ] = new [] {3, 6}
