@@ -7,7 +7,7 @@ using Test.Classes;
 
 namespace Test
 {
-    class MutlipleChoice
+    class MultipleChoice
     {
         private static void RenderList(string title, string[] args, int highlighted)
         {
@@ -46,8 +46,9 @@ namespace Test
             {
                 Console.SetCursorPosition(0, line);
                 RenderList(title, choices, selected);
+                Console.ResetColor();
 
-                info = Console.ReadKey();
+                info = Console.ReadKey(true);
 
                 switch (info.Key)
                 {
@@ -60,6 +61,7 @@ namespace Test
                 }
             } while (info.Key != ConsoleKey.Enter);
 
+            Console.ResetColor();
             return selected;
         }
     }

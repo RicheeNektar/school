@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Test.Classes;
+using Test.InputAPI;
 
 namespace Test
 {
@@ -22,7 +23,9 @@ namespace Test
             {
                 Console.Clear();
 
-                int item = MutlipleChoice.Show("Main Menu", commands);
+                int item = MultipleChoice.Show("Main Menu", commands);
+                Console.Clear();
+
                 HandleInput(item);
             } while (isRunning);
         }
@@ -50,7 +53,14 @@ namespace Test
 
         private static void CreateGame()
         {
+            int selected = MultipleChoice.Show("Select Game", GameTypeMethods.GetAllFullNames());
+            Console.WriteLine();
 
+            int players = NumberInput.Show("How many Players", 2, 6, 2);
+            Console.WriteLine();
+
+            string[] names = NameEditor.RequestBatch(players);
+            Console.WriteLine();
         }
 
         private static void LoadGame()
