@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Test.InputAPI;
 
 namespace Test.Classes
@@ -11,40 +8,54 @@ namespace Test.Classes
     {
         public class Player
         {
-            private byte[][] _guesses = { };
+            private byte[][] _tricks = { };
 
             public Player(string name)
             {
                 Name = name;
             }
 
+            public Player(string name, byte[][] tricks)
+            {
+                Name = name;
+                _tricks = tricks;
+            }
+
+            public override string ToString()
+            {
+                string format = "{0} :\nPoints : {1}\nCorrect : {2}\nWrong : {3}";
+
+                return string.Format(format, Name, Points, Correct, Wrong);
+            }
+
             public void addTrickGuess(byte tricks)
             {
-                int length = _guesses.Length;
-                Array.Resize(ref _guesses, length + 1);
-                _guesses[length] = new byte[] { tricks, 0 };
+                int length = _tricks.Length;
+                Array.Resize(ref _tricks, length + 1);
+                _tricks[length] = new byte[] { tricks, 0 };
             }
 
             public void setActualTricks(byte tricks)
             {
-                int index = _guesses.Length - 1;
-                byte[] roundGuess = _guesses[index];
+                int index = _tricks.Length - 1;
+                byte[] roundGuess = _tricks[index];
                 roundGuess[1] = tricks;
             }
 
-            public int Points => _guesses.Sum(roundGuess =>
+            public int Correct => _tricks.Sum(trick => trick[0] == trick[1] ? 1 : 0);
+            public int Wrong => _tricks.Sum(trick => trick[0] != trick[1] ? 1 : 0);
+            
+            public int Points => _tricks.Sum(trick =>
             {
-                byte guess = roundGuess[0];
-                byte actual = roundGuess[1];
+                byte guess = trick[0];
+                byte actual = trick[1];
 
                 if(guess == actual)
                 {
                     return 20 + actual * 10;
                 }
-                else
-                {
-                    return Math.Abs(actual - guess) * -10;
-                }
+                
+                return Math.Abs(actual - guess) * -10;
             });
 
             public string Name { get; }
@@ -53,7 +64,51 @@ namespace Test.Classes
         public class Game
         {
             private const GameType TYPE = GameType.WIZ;
+            public string[] Commands { get; } =
+            {
+                "Edit names",
+                "Enter guess tricks",
+                "Enter actual tricks",
+                "Save Game",
+                "Back to Main Menu"
+            };
+
+            public static Game FromBytes(byte[] bytes, string fileLocation)
+            {
+                int rounds = bytes[0];
+                int playerIndex = 0;
+                Player[] players = new Player[TYPE.Maximum()];
+
+                for (int i = 1; i < bytes.Length; i++)
+                {
+                    string name = "";
+                    int nameLength = bytes[i++];
+
+                    for (; i < i + nameLength; i++)
+                    {
+                        name += bytes[i];
+                    }
+                    
+                    byte[][] tricks = new byte[rounds][];
+                    for (; i < i + rounds;)
+                    {
+                        tricks[i - rounds] = new [] {
+                            bytes[i++],
+                            bytes[i++]
+                        };
+                    }
+
+                    Player player = new Player(name, tricks);
+                    players[playerIndex++] = player;
+                }
+                
+                Array.Resize(ref players, playerIndex);
+                return new Game(players, fileLocation);
+            }
+            
+            
             private Player[] _players;
+            private string _saveLocation;
 
             public Game(string[] names)
             {
@@ -64,6 +119,12 @@ namespace Test.Classes
                 {
                     _players[i] = new Player(names[i]);
                 }
+            }
+
+            public Game(Player[] players, string saveLocation)
+            {
+                _players = players;
+                _saveLocation = saveLocation;
             }
             
             private string[] GetNames()
@@ -104,14 +165,6 @@ namespace Test.Classes
                     }
                 }
             }
-
-            public string[] Commands { get; } =
-            {
-                "Enter guess tricks",
-                "Enter actual tricks",
-                "Save Game",
-                "Back to Main Menu"
-            };
         }
     }
 }

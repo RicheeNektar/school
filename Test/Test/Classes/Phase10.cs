@@ -1,10 +1,9 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
-using Test.Classes;
 using Test.InputAPI;
 
-namespace Test
+namespace Test.Classes
 {
     class Phase10
     {
@@ -15,6 +14,12 @@ namespace Test
             public Player(string name)
             {
                 Name = name;
+            }
+
+            public Player(string name, byte[] points)
+            {
+                Name = name;
+                _points = points;
             }
 
             public void add(int points)
@@ -44,6 +49,47 @@ namespace Test
         public class Game
         {
             private const GameType TYPE = GameType.P10;
+            public string[] Commands { get; } =
+            {
+                "Enter points",
+                "Edit names",
+                "Show stats",
+                "Show course",
+                "Save stats",
+                "Back to main menu"
+            };
+            
+            public static Game FromBytes(byte[] bytes, string fileLocation)
+            {
+                int rounds = bytes[0];
+                int playerIndex = 0;
+                Player[] players = new Player[TYPE.Maximum()];
+
+                for (int i = 1; i < bytes.Length; i++)
+                {
+                    string name = "";
+                    int nameLen = bytes[i++];
+
+                    for (; i < i + nameLen; i++)
+                    {
+                        name += (char) bytes[i];
+                    }
+
+                    byte[] points = new byte[rounds];
+                    for (; i < i + rounds; i++)
+                    {
+                        points[i - rounds] = bytes[i];
+                    }
+                    
+                    Player player = new Player(name, points);
+                    players[playerIndex++] = player;
+                }
+
+                Array.Resize(ref players, playerIndex);
+                return new Game(players, fileLocation);
+            }
+            
+
             private Player[] _players;
             private string _saveLocation;
 
@@ -63,11 +109,6 @@ namespace Test
                 _players = players;
             }
 
-            public static Game FromBytes(byte[] bytes)
-            {
-                // TODO Reconstruct from byte[]
-            }
-            
             public bool HandleCommand(int choice)
             {
                 switch (choice)
@@ -219,9 +260,12 @@ namespace Test
                 char sep = Path.DirectorySeparatorChar;
                 
                 string[] lines = LineEditor
-                    .RequestStringBatch("Enter save location", 1, null, new [] {
-                        Environment.GetFolderPath(Environment.SpecialFolder.CommonDocuments)
-                        + sep + DateTime.Today + ".p10"
+                    .RequestStringBatch("Enter save location", 1, null, new []
+                    {
+                        _saveLocation
+                        ?? Environment.GetFolderPath(Environment.SpecialFolder.CommonDocuments) + sep 
+                                                                                                + DateTime.Today 
+                                                                                                + ".p10"
                     }, true);
 
                 Console.Clear();
@@ -292,16 +336,6 @@ namespace Test
                 
                 stream.Close();
             }
-
-            public string[] Commands { get; } =
-            {
-                "Enter points",
-                "Edit names",
-                "Show stats",
-                "Show course",
-                "Save stats",
-                "Back to main menu"
-            };
         }
     }
 }
