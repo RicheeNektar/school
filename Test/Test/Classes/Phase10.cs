@@ -1,25 +1,25 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml.Linq;
-using Test.Classes;
 using Test.InputAPI;
 
-namespace Test
+namespace Test.Classes
 {
     class Phase10
     {
-        private class Player
+        public class Player
         {
             private byte[] _points = { };
-            private readonly string _name;
 
             public Player(string name)
             {
-                _name = name;
+                Name = name;
+            }
+
+            public Player(string name, byte[] points)
+            {
+                Name = name;
+                _points = points;
             }
 
             public void add(int points)
@@ -35,19 +35,63 @@ namespace Test
             public override string ToString()
             {
                 string format = "{0}:\nPoints : {1}\nPhase : {2}\nWins : {3}";
-                return string.Format(format, _name, Points, Phase, Wins);
+                return string.Format(format, Name, Points, Phase, Wins);
             }
-            
+
+            public byte[] PointArray => _points;
             public int Points => _points.Sum(i => i);
             public int Phase => _points.Sum(i => i < 50 ? 1 : 0);
             public int Wins => _points.Sum(i => i == 0 ? 1 : 0);
-            public string Name => _name;
+            
+            public string Name { get; set; }
         }
 
         public class Game
         {
             private const GameType TYPE = GameType.P10;
+            public string[] Commands { get; } =
+            {
+                "Enter points",
+                "Edit names",
+                "Show stats",
+                "Show course",
+                "Save stats",
+                "Back to main menu"
+            };
+            
+            public static Game FromBytes(byte[] bytes, string fileLocation)
+            {
+                int rounds = bytes[0];
+                int playerIndex = 0;
+                Player[] players = new Player[TYPE.Maximum()];
+
+                for (int i = 1; i < bytes.Length; i++)
+                {
+                    string name = "";
+                    int nameLen = bytes[i++];
+
+                    for (; i < i + nameLen; i++)
+                    {
+                        name += (char) bytes[i];
+                    }
+
+                    byte[] points = new byte[rounds];
+                    for (; i < i + rounds; i++)
+                    {
+                        points[i - rounds] = bytes[i];
+                    }
+                    
+                    Player player = new Player(name, points);
+                    players[playerIndex++] = player;
+                }
+
+                Array.Resize(ref players, playerIndex);
+                return new Game(players, fileLocation);
+            }
+            
+
             private Player[] _players;
+            private string _saveLocation;
 
             public Game(string[] names)
             {
@@ -58,7 +102,13 @@ namespace Test
                     _players[i] = new Player(names[i]);
                 }
             }
-            
+
+            public Game(Player[] players, string saveLocation)
+            {
+                _saveLocation = saveLocation;
+                _players = players;
+            }
+
             public bool HandleCommand(int choice)
             {
                 switch (choice)
@@ -68,10 +118,22 @@ namespace Test
                         break;
                     
                     case 1:
-                        Stats();
+                        UpdateNames();
+                        break;
+                    
+                    case 2:
+                        RenderStats();
+                        break;
+                    
+                    case 3:
+                        Course();
                         break;
                     
                     case 4:
+                        Save();
+                        break;
+                    
+                    case 5:
                         return false;
                 }
                 return true;
@@ -93,14 +155,28 @@ namespace Test
             {
                 int[] points =
                     LineEditor.RequestIntBatch("Enter points", _players.Length, GetNames(), 0, 255);
-                
-                for (int i = 0; i < _players.Length; i++)
+
+                if (points != null)
                 {
-                    _players[i].add((byte) points[i]);
+                    for (int i = 0; i < _players.Length; i++)
+                    {
+                        _players[i].add((byte) points[i]);
+                    }
                 }
             }
 
-            private void Stats()
+            private void UpdateNames()
+            {
+                string[] names = GetNames();
+                string[] newNames = LineEditor.RequestStringBatch("Change names", names.Length, null, names);
+
+                for (int i = 0; i < names.Length; i++)
+                {
+                    _players[i].Name = newNames[i];
+                }
+            }
+            
+            private void RenderStats()
             {
                 int spacing = 3;
                 string[] output = new string[4];
@@ -153,22 +229,113 @@ namespace Test
 
             private void Course()
             {
-                
+                string playerFormat = "{0}{1}";
+
+                foreach (Player player in _players)
+                {
+                    int i = 0;
+                    
+                    string[] lines = new string[player.PointArray.Length + 2];
+                    lines[i++] = player.Name;
+                    
+                    int totalPoints = 0;
+                    foreach (byte points in player.PointArray)
+                    {
+                        lines[i++] = $"{totalPoints}";
+                        totalPoints += points;
+                    }
+
+                    lines[i] = "" + totalPoints;
+                    int longest = Math.Max(totalPoints.ToString().Length, player.Name.Length) + 2;
+                    
+                    
+                }
+
+                string[] output = new string[2];
+                // TODO "Join" string arrays
             }
 
             private void Save()
             {
+                char sep = Path.DirectorySeparatorChar;
                 
+                string[] lines = LineEditor
+                    .RequestStringBatch("Enter save location", 1, null, new []
+                    {
+                        _saveLocation
+                        ?? Environment.GetFolderPath(Environment.SpecialFolder.CommonDocuments) + sep 
+                                                                                                + DateTime.Today 
+                                                                                                + ".p10"
+                    }, true);
+
+                Console.Clear();
+                if (lines != null)
+                {
+                    string file = lines[0];
+                    string path = file.Substring(0, file.LastIndexOf(sep));
+                    
+                    if (Directory.Exists(path))
+                    {
+                        try
+                        {
+                            if (File.Exists(file))
+                            {
+                                int selected =
+                                    MultipleChoice.Show("File already exists. Overwrite?", "No", "", "Yes");
+
+                                if (selected == 2)
+                                {
+                                    SaveGame(file);
+                                }
+                            }
+                            else
+                            {
+                                SaveGame(file);
+                            }
+                        }
+                        catch (IOException)
+                        {
+                            Console.WriteLine("An error occured while saving.");
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine($"There is no such directory '{path}'.");
+                        Console.ReadKey(true);
+                    }
+                }
             }
 
-            public string[] Commands { get; } =
+            private void SaveGame(string file)
             {
-                "Enter points",
-                "Show stats",
-                "Show course",
-                "Save stats",
-                "Back to main menu"
-            };
+                FileStream stream = new FileStream(file, FileMode.Create);
+                
+                stream.Write(TYPE.ToByteArray(), 0, 3);
+                
+                stream.Write(new []
+                {
+                    (byte) _players[0].PointArray.Length
+                }, 0, 1);
+
+                foreach (Player player in _players)
+                {
+                    int pointsLength = player.PointArray.Length;
+                    int nameLength = player.Name.Length;
+                    
+                    byte[] buffer = new byte[pointsLength + nameLength + 1];
+
+                    buffer[0] = (byte) nameLength;
+                    for (int i = 0; i < nameLength; i++)
+                    {
+                        buffer[i + 1] = (byte) player.Name[i];
+                    }
+                    
+                    Array.Copy(player.PointArray, buffer, pointsLength);
+                    stream.Write(buffer,0, buffer.Length);
+                }
+                
+                stream.Close();
+            }
         }
     }
 }

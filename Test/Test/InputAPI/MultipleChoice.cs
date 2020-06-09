@@ -59,11 +59,11 @@ namespace Test
                     
                     case ConsoleKey.DownArrow:
                         selected++;
-                        if (selected > choices.Length) selected = 0;
+                        if (selected >= choices.Length) selected = 0;
                         break;
                 }
                 
-            } while (info.Key != ConsoleKey.Enter);
+            } while (info.Key != ConsoleKey.Enter || string.IsNullOrEmpty(choices[selected]));
 
             Console.ResetColor();
             return selected;

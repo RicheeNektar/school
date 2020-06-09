@@ -66,19 +66,20 @@ namespace Test.InputAPI
             Console.SetCursorPosition(left, top);
         }
 
-        public static string[] RequestStringBatch(string title, int batchSize, string[] prefixes = null, string[] startInput = null)
+        public static string[] RequestStringBatch(string title, int batchSize, string[] prefixes = null,
+            string[] startInput = null, bool allowSymbols = false)
         {
             Console.CursorVisible = true;
-            
+
             bool hasTitle = !string.IsNullOrEmpty(title);
-            
+
             int cursorTop = Console.CursorTop;
             ConsoleKeyInfo info;
 
             int cursorLeft = 0;
             int editing = 0;
             int longest = 0;
-            
+
             string[] values = startInput ?? Enumerable.Repeat("", batchSize).ToArray();
 
             do
@@ -88,25 +89,26 @@ namespace Test.InputAPI
                 {
                     longest = Math.Max(longest, s.Length);
                 }
-                
+
                 if (cursorLeft > value.Length)
                 {
                     cursorLeft = value.Length;
                 }
-                
+
                 Console.SetCursorPosition(0, cursorTop);
-                RenderList(title, values, editing, longest, prefixes); 
-                
+                RenderList(title, values, editing, longest, prefixes);
+
                 SetCursorPos(cursorLeft, cursorTop, editing, hasTitle, prefixes);
                 info = Console.ReadKey(true);
 
-                switch(info.Key)
+                switch (info.Key)
                 {
                     case ConsoleKey.Escape:
                         Console.CursorVisible = false;
                         return null;
-                    
+
                     #region Movement
+
                     case ConsoleKey.UpArrow:
                         if (editing > 0) editing--;
                         break;
@@ -122,9 +124,11 @@ namespace Test.InputAPI
                     case ConsoleKey.RightArrow:
                         if (cursorLeft < value.Length) cursorLeft++;
                         break;
+
                     #endregion
 
                     #region Backspace
+
                     case ConsoleKey.Backspace:
                         if (cursorLeft > 0)
                         {
@@ -136,16 +140,19 @@ namespace Test.InputAPI
                             {
                                 string start = value.Substring(0, cursorLeft - 1);
                                 string end = value.Substring(cursorLeft, value.Length - cursorLeft);
-                                
+
                                 values[editing] = start + end;
                             }
 
                             cursorLeft--;
                         }
+
                         break;
+
                     #endregion
-                    
+
                     #region Entf
+
                     case ConsoleKey.Delete:
                         if (cursorLeft < value.Length)
                         {
@@ -154,14 +161,20 @@ namespace Test.InputAPI
 
                             values[editing] = start + end;
                         }
+
                         break;
+
                     #endregion
 
                     #region writing
+
                     default:
-                        if(char.IsLetterOrDigit(info.KeyChar)
-                           || info.KeyChar == ' ')
-                        {
+                        bool IsAllowedChar = !char.IsControl(info.KeyChar) && allowSymbols;
+                        
+                        if (char.IsLetterOrDigit(info.KeyChar)
+                            || info.KeyChar == ' '
+                            || IsAllowedChar
+                        ) {
                             if (cursorLeft == value.Length)
                             {
                                 values[editing] += info.KeyChar;
@@ -174,10 +187,12 @@ namespace Test.InputAPI
                                 value = start + info.KeyChar + end;
                                 values[editing] = value;
                             }
-                            
+
                             cursorLeft++;
                         }
+
                         break;
+
                     #endregion
                 }
 
@@ -213,6 +228,10 @@ namespace Test.InputAPI
                 
             } while (lines != null
                      && !CheckLines(lines, min, max) );
+
+            
+            if (lines == null) return null;
+            
 
             int[] returned = new int[batchSize];
             for (int i = 0; i < batchSize; i++)
