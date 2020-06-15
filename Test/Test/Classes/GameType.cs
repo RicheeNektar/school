@@ -42,7 +42,7 @@ namespace Test.Classes
                     return new Phase10.Game(names);
                 
                 case GameType.WIZ:
-                    return new Phase10.Game(names);
+                    return new Wizard.Game(names);
                 
                 default:
                     return null;
