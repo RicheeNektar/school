@@ -126,7 +126,7 @@ namespace Test.Classes
                         break;
                     
                     case 3:
-                        Course();
+                        ShowStats();
                         break;
                     
                     case 4:
@@ -227,32 +227,38 @@ namespace Test.Classes
                 Console.Clear();
             }
 
-            private void Course()
+            private string[] GetPlayersCourse()
             {
-                string playerFormat = "{0}{1}";
-
-                foreach (Player player in _players)
+                string[] output = new string[_players.Length];
+                int longestName = _players.Max(plr => plr.Name.Length) + 1;
+                
+                for (int i = 0; i < _players.Length; i++)
                 {
-                    int i = 0;
+                    Player player = _players[i];
+                    string stats = player.Name + '\n';
                     
-                    string[] lines = new string[player.PointArray.Length + 2];
-                    lines[i++] = player.Name;
-                    
-                    int totalPoints = 0;
-                    foreach (byte points in player.PointArray)
+                    foreach(byte points in player.PointArray)
                     {
-                        lines[i++] = $"{totalPoints}";
-                        totalPoints += points;
+                        stats += $"{points.ToString()}\n";
                     }
 
-                    lines[i] = "" + totalPoints;
-                    int longest = Math.Max(totalPoints.ToString().Length, player.Name.Length) + 2;
-                    
-                    
+                    output[i] = stats + player.Points;
                 }
 
-                string[] output = new string[2];
-                // TODO "Join" string arrays
+                return output;
+            }
+
+            private void ShowStats()
+            {
+                string[] output = GetPlayersCourse();
+                string[] formatted = Program.FormatMergeLines(output);
+
+                foreach (string line in formatted)
+                {
+                    Console.WriteLine(line);
+                }
+
+                Console.ReadLine();
             }
 
             private void Save()
@@ -263,9 +269,9 @@ namespace Test.Classes
                     .RequestStringBatch("Enter save location", 1, null, new []
                     {
                         _saveLocation
-                        ?? Environment.GetFolderPath(Environment.SpecialFolder.CommonDocuments) + sep 
-                                                                                                + DateTime.Today 
-                                                                                                + ".p10"
+                        ?? Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + sep 
+                                                                                            + DateTime.Today 
+                                                                                            + ".p10"
                     }, true);
 
                 Console.Clear();
@@ -273,6 +279,9 @@ namespace Test.Classes
                 {
                     string file = lines[0];
                     string path = file.Substring(0, file.LastIndexOf(sep));
+                    
+                    Console.WriteLine(path);
+                    Console.ReadLine();
                     
                     if (Directory.Exists(path))
                     {

@@ -28,18 +28,15 @@ namespace Test.Classes
                 return ""; //  return string.Format(format, Name, Points, Correct, Wrong);
             }
 
-            public void addTrickGuess(byte tricks)
-            {
-                int length = _tricks.Length;
-                Array.Resize(ref _tricks, length + 1);
-                _tricks[length] = new byte[] { tricks, 0 };
-            }
-
             public void setActualTricks(byte tricks)
             {
-                int index = _tricks.Length - 1;
-                byte[] roundGuess = _tricks[index];
+                int index = _tricks.Length;
+                Array.Resize(ref _tricks, index + 1);
+
+                byte[] roundGuess = new byte[2];
+                roundGuess[0] = TricksGuess;
                 roundGuess[1] = tricks;
+                _tricks[index] = roundGuess;
             }
 
             private int[] GetPoints()
@@ -53,18 +50,18 @@ namespace Test.Classes
                     byte guess = trick[0];
                     byte actual = trick[1];
 
-                    int round = -1;
+                    short round;
 
                     if (guess == actual)
                     {
-                        round = 20 + actual * 10;
+                        round = (short) (20 + actual * 10);
                     }
                     else
                     {
-                        round = Math.Abs(actual - guess) * -10;
+                        round = (short) (Math.Abs(actual - guess) * -10);
                     }
 
-                    points[i] = round;
+                    points[i] = round << 16 | guess << 8 | actual;
                 }
 
                 return points;
@@ -77,6 +74,7 @@ namespace Test.Classes
 
 
             public string Name { get; set; }
+            public byte TricksGuess { get; set; }
         }
 
         public class Game
@@ -126,7 +124,7 @@ namespace Test.Classes
             }
             
             
-            private Player[] _players;
+            private readonly Player[] _players;
             private string _saveLocation;
 
             public Game(string[] names)
@@ -163,7 +161,7 @@ namespace Test.Classes
                         break;
 
                     case 3:
-                        ShowStats();
+                        ShowCourse();
                         break;
 
                     case 4:
@@ -200,13 +198,20 @@ namespace Test.Classes
             public void EnterGuessTricks()
             {
                 string[] names = GetNames();
+                int[] entered = new int[_players.Length];
+                
+                for (int i = 0; i < entered.Length; i++)
+                {
+                    entered[i] = _players[i].TricksGuess;
+                }
+                
                 int[] guesses = LineEditor.RequestIntBatch("Enter Guesses", _players.Length, names, 0, 255);
 
                 if (guesses != null)
                 {
                     for (int i = 0; i < _players.Length; i++)
                     {
-                        _players[i].addTrickGuess((byte) guesses[i]);
+                        _players[i].TricksGuess = (byte) guesses[i];
                     }
                 }
             }
@@ -225,9 +230,8 @@ namespace Test.Classes
                 }
             }
 
-            public void ShowStats()
+            private string[] GetPlayerRounds()
             {
-                // Gather Stats
                 string[] output = new string[_players.Length];
                 int longestName = _players.Max(player => player.Name.Length) + 1;
 
@@ -238,51 +242,34 @@ namespace Test.Classes
                     int[] stats = player.Stats;
                    
                     int total = 0;
-                    string line = playerName
-                        + new string(Enumerable.Repeat(' ', longestName - playerName.Length).ToArray()) + '\n';
+                    string line = playerName + '\n';
 
                     foreach(int round in stats)
                     {
-                        line += string.Format("{0}\n", round);
-                        total += round;
+                        short points = (short) (round >> 16);
+                        byte guess = (byte) (round >> 8);
+                        byte actual = (byte) round;
+                        
+                        line += $"{points} / {guess} / {actual}\n";
+                        total += points;
                     }
 
                     output[i] = line + total;
                 }
 
-                // Format output to Table
+                return output;
+            }
+            
+            public void ShowCourse()
+            {
+                string[] output = GetPlayerRounds();
+                string[] formatted = Program.FormatMergeLines(output);
 
-                string[] formattedOutput = new string[output.Length];
-                for(int i = 0; i<output.Length; i++)
-                {
-                    string[] lines = output[i].Split('\n');
-
-                    int longestLine = lines.Max(line1 => line1.Length);
-                    int longestPoint = lines.Max(line1 =>
-                    {
-                        if (int.TryParse(line1.Replace("\n", ""), out int length))
-                        {
-                            return length;
-                        }
-                        return -1;
-                    });
-
-                    string statLine = lines[0] + new string(new char[longestLine - lines[0].Length).Replace('\n',);
-
-                    for (int j = 1; j<lines.Length; j++)
-                    {
-                        string line = lines[i];
-                        string whiteSpaces = new string(new char[longestLine - line.Length]);
-                        line += "\n" + lines[j];
-                    }
-
-                    formattedOutput[i] = statLine;
-                }
-
-                foreach(string line in formattedOutput)
+                foreach(string line in formatted)
                 {
                     Console.WriteLine(line);
                 }
+                Console.WriteLine("\n** Points / Guessed / Actual Tricks");
 
                 Console.ReadLine();
             }
