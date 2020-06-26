@@ -50,47 +50,47 @@ namespace Test
         }
         
         public static string[] FormatMergeLines(string[] output)
+        {
+            string[] formattedOutput = new string[output.Length];
+            for(int i = 0; i<output.Length; i++)
             {
-                string[] formattedOutput = new string[output.Length];
-                for(int i = 0; i<output.Length; i++)
+                string[] lines = output[i].Split('\n');
+                int longestLine = lines.Max(line => line.Length) + 1;
+
+                string formatted = lines[0] + new string(new char[longestLine - lines[0].Length])
+                                                  .Replace('\0', ' ');
+
+                for (int j = 1; j < lines.Length; j++)
                 {
-                    string[] lines = output[i].Split('\n');
-                    int longestLine = lines.Max(line => line.Length) + 1;
-
-                    string formatted = lines[0] + new string(new char[longestLine - lines[0].Length])
-                                                      .Replace('\0', ' ');
-
-                    for (int j = 1; j < lines.Length; j++)
-                    {
-                        string roundLine = lines[j].Replace("\n", "");
-                        int remaining = longestLine - roundLine.Length;
-                        
-                        string whiteSpace = new string(new char[remaining])
-                            .Replace('\0', ' ');
-                        
-                        formatted += j + 1 == lines.Length ? GetEmpty(whiteSpace, roundLine) : "";
-                        formatted += $"\n{whiteSpace}{roundLine}";
-                    }
+                    string roundLine = lines[j].Replace("\n", "");
+                    int remaining = longestLine - roundLine.Length;
                     
-                    formattedOutput[i] = formatted;
-                }
-
-                int totalLines = formattedOutput[0].Split('\n').Length;
-                string[] merged = new string[totalLines];
-
-                for (int i = 0; i < totalLines; i++)
-                {
-                    string line = "";
+                    string whiteSpace = new string(new char[remaining])
+                        .Replace('\0', ' ');
                     
-                    for (int j = 0; j < formattedOutput.Length; j++)
-                    {
-                        line += $"{formattedOutput[j].Split('\n')[i]} | ";
-                    }
-
-                    merged[i] = line;
+                    formatted += j + 1 == lines.Length ? GetEmpty(whiteSpace, roundLine) : "";
+                    formatted += $"\n{whiteSpace}{roundLine}";
                 }
-
-                return merged;
+                
+                formattedOutput[i] = formatted;
             }
+
+            int totalLines = formattedOutput[0].Split('\n').Length;
+            string[] merged = new string[totalLines];
+
+            for (int i = 0; i < totalLines; i++)
+            {
+                string line = "";
+                
+                for (int j = 0; j < formattedOutput.Length; j++)
+                {
+                    line += $"{formattedOutput[j].Split('\n')[i]} | ";
+                }
+
+                merged[i] = line;
+            }
+
+            return merged;
+        }
     }
 }

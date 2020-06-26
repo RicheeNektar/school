@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 
 namespace Test.InputAPI
@@ -240,6 +241,43 @@ namespace Test.InputAPI
             }
             
             return returned;
+        }
+        
+        public static string RequestPath(string defLocation = null)
+        {
+            char sep = Path.DirectorySeparatorChar;
+            DateTime time = DateTime.Today;
+            string fileName = $"{time.Year}-{time.Month}-{time.Day}";
+
+            string[] lines = LineEditor
+                .RequestStringBatch("Enter save location", 1, null, new []
+                {
+                    defLocation ?? Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + sep 
+                                                                                        + fileName
+                                                                                        + ".p10"
+                }, true);
+
+            Console.Clear();
+            if (lines != null)
+            {
+                string file = lines[0];
+                string path = file.Substring(0, file.LastIndexOf(sep));
+                    
+                Console.WriteLine(path);
+                Console.ReadLine();
+
+                if (Directory.Exists(path))
+                {
+                    return file;
+                }
+                else
+                {
+                    Console.WriteLine($"There is no such directory '{path}'.");
+                    Console.ReadKey(true);
+                }
+            }
+
+            return null;
         }
     }
 }

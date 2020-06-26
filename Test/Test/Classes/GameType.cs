@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices.WindowsRuntime;
 using System.Text;
 
 namespace Test.Classes
@@ -34,6 +35,11 @@ namespace Test.Classes
             return Encoding.UTF8.GetBytes(type.ToString());
         }
 
+        public static bool TryParse(byte[] bytes, out GameType type)
+        {
+            return GameType.TryParse(Encoding.UTF8.GetString(bytes), out type);
+        }
+
         public static dynamic CreateGame(this GameType type, string[] names)
         {
             switch (type)
@@ -43,6 +49,21 @@ namespace Test.Classes
                 
                 case GameType.WIZ:
                     return new Wizard.Game(names);
+                
+                default:
+                    return null;
+            }
+        }
+        
+        public static dynamic CreateGame(this GameType type, byte[] gameData, string fileLocation)
+        {
+            switch (type)
+            {
+                case GameType.P10:
+                    return Phase10.Game.FromBytes(gameData, fileLocation);
+                
+                case GameType.WIZ:
+                    return Wizard.Game.FromBytes(gameData, fileLocation);
                 
                 default:
                     return null;

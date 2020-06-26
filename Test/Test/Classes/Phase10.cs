@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using Test.InputAPI;
 
 namespace Test.Classes
@@ -40,8 +41,8 @@ namespace Test.Classes
 
             public byte[] PointArray => _points;
             public int Points => _points.Sum(i => i);
-            public int Phase => _points.Sum(i => i < 50 ? 1 : 0);
-            public int Wins => _points.Sum(i => i == 0 ? 1 : 0);
+            private int Phase => _points.Sum(i => i < 50 ? 1 : 0);
+            private int Wins => _points.Sum(i => i == 0 ? 1 : 0);
             
             public string Name { get; set; }
         }
@@ -65,20 +66,23 @@ namespace Test.Classes
                 int playerIndex = 0;
                 Player[] players = new Player[TYPE.Maximum()];
 
-                for (int i = 1; i < bytes.Length; i++)
+                for (int i = 1; i < bytes.Length;)
                 {
                     string name = "";
                     int nameLen = bytes[i++];
 
-                    for (; i < i + nameLen; i++)
+                    int target = i + nameLen;
+                    for (; i < target; i++)
                     {
                         name += (char) bytes[i];
                     }
 
                     byte[] points = new byte[rounds];
-                    for (; i < i + rounds; i++)
+                    
+                    target = i + rounds;
+                    for (int j = 0; i < target; i++, j++)
                     {
-                        points[i - rounds] = bytes[i];
+                        points[j] = bytes[i];
                     }
                     
                     Player player = new Player(name, points);
@@ -263,87 +267,60 @@ namespace Test.Classes
 
             private void Save()
             {
-                char sep = Path.DirectorySeparatorChar;
-                
-                string[] lines = LineEditor
-                    .RequestStringBatch("Enter save location", 1, null, new []
-                    {
-                        _saveLocation
-                        ?? Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + sep 
-                                                                                            + DateTime.Today 
-                                                                                            + ".p10"
-                    }, true);
+                string file = LineEditor.RequestPath(_saveLocation);
 
-                Console.Clear();
-                if (lines != null)
+                if (file != null)
                 {
-                    string file = lines[0];
-                    string path = file.Substring(0, file.LastIndexOf(sep));
-                    
-                    Console.WriteLine(path);
-                    Console.ReadLine();
-                    
-                    if (Directory.Exists(path))
+                    try
                     {
-                        try
+                        if (File.Exists(file))
                         {
-                            if (File.Exists(file))
-                            {
-                                int selected =
-                                    MultipleChoice.Show("File already exists. Overwrite?", "No", "", "Yes");
+                            int selected =
+                                MultipleChoice.Show("File already exists. Overwrite?", "No", "", "Yes");
 
-                                if (selected == 2)
-                                {
-                                    SaveGame(file);
-                                }
-                            }
-                            else
+                            if (selected == 2)
                             {
                                 SaveGame(file);
                             }
                         }
-                        catch (IOException)
+                        else
                         {
-                            Console.WriteLine("An error occured while saving.");
+                            SaveGame(file);
                         }
                     }
-                    else
+                    catch (IOException)
                     {
-                        Console.WriteLine($"There is no such directory '{path}'.");
-                        Console.ReadKey(true);
+                        Console.WriteLine("An error occured while saving.");
                     }
                 }
             }
 
             private void SaveGame(string file)
             {
-                FileStream stream = new FileStream(file, FileMode.Create);
+                _saveLocation = file;
                 
-                stream.Write(TYPE.ToByteArray(), 0, 3);
-                
-                stream.Write(new []
+                using (FileStream stream = new FileStream(file, FileMode.Create))
                 {
-                    (byte) _players[0].PointArray.Length
-                }, 0, 1);
+                    stream.Write(TYPE.ToByteArray(), 0, 3);
 
-                foreach (Player player in _players)
-                {
-                    int pointsLength = player.PointArray.Length;
-                    int nameLength = player.Name.Length;
-                    
-                    byte[] buffer = new byte[pointsLength + nameLength + 1];
-
-                    buffer[0] = (byte) nameLength;
-                    for (int i = 0; i < nameLength; i++)
+                    stream.Write(new[]
                     {
-                        buffer[i + 1] = (byte) player.Name[i];
+                        (byte) _players[0].PointArray.Length
+                    }, 0, 1);
+
+                    foreach (Player player in _players)
+                    {
+                        int nameLength = player.Name.Length;
+                        stream.WriteByte((byte) nameLength);
+
+                        foreach (char c in player.Name)
+                        {
+                            stream.WriteByte((byte) c);
+                        }
+
+                        stream.Write(player.PointArray, 0, player.PointArray.Length);
                     }
-                    
-                    Array.Copy(player.PointArray, buffer, pointsLength);
-                    stream.Write(buffer,0, buffer.Length);
                 }
-                
-                stream.Close();
             }
         }
     }

@@ -1,5 +1,7 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
+using System.Text;
 using Test.InputAPI;
 
 namespace Test.Classes
@@ -24,19 +26,23 @@ namespace Test.Classes
             public override string ToString()
             {
                 string format = "{0} :\nPoints : {1}\nCorrect : {2}\nWrong : {3}";
-
-                return ""; //  return string.Format(format, Name, Points, Correct, Wrong);
+                return string.Format(format, Name, GetPoints().Sum(data => data >> 16), Correct, Wrong);
             }
 
             public void setActualTricks(byte tricks)
             {
-                int index = _tricks.Length;
-                Array.Resize(ref _tricks, index + 1);
+                if (TricksGuess > -1)
+                {
+                    int index = _tricks.Length;
+                    Array.Resize(ref _tricks, index + 1);
 
-                byte[] roundGuess = new byte[2];
-                roundGuess[0] = TricksGuess;
-                roundGuess[1] = tricks;
-                _tricks[index] = roundGuess;
+                    byte[] roundGuess = new byte[2];
+                    roundGuess[0] = (byte) TricksGuess;
+                    roundGuess[1] = tricks;
+                    _tricks[index] = roundGuess;
+
+                    TricksGuess = -1;
+                }
             }
 
             private int[] GetPoints()
@@ -74,7 +80,9 @@ namespace Test.Classes
 
 
             public string Name { get; set; }
-            public byte TricksGuess { get; set; }
+            public sbyte TricksGuess { get; set; }
+            public byte Rounds => (byte) _tricks.Length;
+            public byte[][] Tricks => _tricks;
         }
 
         public class Game
@@ -86,6 +94,7 @@ namespace Test.Classes
                 "Enter guess tricks",
                 "Enter actual tricks",
                 "Show Stats",
+                "Show Course",
                 "Save Game",
                 "Back to Main Menu"
             };
@@ -96,20 +105,22 @@ namespace Test.Classes
                 int playerIndex = 0;
                 Player[] players = new Player[TYPE.Maximum()];
 
-                for (int i = 1; i < bytes.Length; i++)
+                for (int i = 1; i < bytes.Length;)
                 {
                     string name = "";
                     int nameLength = bytes[i++];
 
-                    for (; i < i + nameLength; i++)
+                    int target = i + nameLength;
+                    for (; i < target; i++)
                     {
-                        name += bytes[i];
+                        name += (char) bytes[i];
                     }
-                    
+
+                    target = i + rounds;
                     byte[][] tricks = new byte[rounds][];
-                    for (; i < i + rounds;)
+                    for (int j = 0; i < target; j++)
                     {
-                        tricks[i - rounds] = new [] {
+                        tricks[j] = new [] {
                             bytes[i++],
                             bytes[i++]
                         };
@@ -161,13 +172,18 @@ namespace Test.Classes
                         break;
 
                     case 3:
+                        RenderStats();
+                        break;
+                        
+                    case 4:
                         ShowCourse();
                         break;
 
-                    case 4:
-                        break; // TODO SAVE
-
                     case 5:
+                        Save();
+                        break;
+
+                    case 6:
                         return false;
                 }
                 return true;
@@ -205,13 +221,13 @@ namespace Test.Classes
                     entered[i] = _players[i].TricksGuess;
                 }
                 
-                int[] guesses = LineEditor.RequestIntBatch("Enter Guesses", _players.Length, names, 0, 255);
+                int[] guesses = LineEditor.RequestIntBatch("Enter Guesses", _players.Length, names, 0, 127);
 
                 if (guesses != null)
                 {
                     for (int i = 0; i < _players.Length; i++)
                     {
-                        _players[i].TricksGuess = (byte) guesses[i];
+                        _players[i].TricksGuess = (sbyte) guesses[i];
                     }
                 }
             }
@@ -259,6 +275,57 @@ namespace Test.Classes
 
                 return output;
             }
+
+            private void RenderStats()
+            {
+                int spacing = 3;
+                string[] output = new string[4];
+
+                foreach (Player p in _players)
+                {
+                    string[] lines = p.ToString().Split('\n');
+                    int longest = lines.Max(line => line.Length) + spacing;
+                    
+                    for (int i = 0; i < lines.Length; i++)
+                    {
+                        string line = lines[i];
+                        string whiteSpace = new string(new char[longest - line.Length]);
+                        
+                        if (i > 0)
+                        {
+                            whiteSpace = whiteSpace.Replace('\0', ' ');
+                        }
+                        
+                        output[i] += line + whiteSpace;
+                    }
+                }
+
+                Console.ResetColor();
+                foreach (char c in output[0])
+                {
+                    if (c == '\0')
+                    {
+                        Console.ResetColor();
+                        Console.Write(' ');
+                    }
+                    else
+                    {
+                        Console.ForegroundColor = Defaults.Background;
+                        Console.BackgroundColor = Defaults.Foreground;
+                        Console.Write(c);
+                    }
+                }
+
+                Console.WriteLine();
+                
+                for(int i = 1; i<output.Length; i++)
+                {
+                    Console.WriteLine(output[i]);
+                }
+                
+                Console.ReadLine();
+                Console.Clear();
+            }
             
             public void ShowCourse()
             {
@@ -272,6 +339,65 @@ namespace Test.Classes
                 Console.WriteLine("\n** Points / Guessed / Actual Tricks");
 
                 Console.ReadLine();
+            }
+            
+            private void Save()
+            {
+                string file = LineEditor.RequestPath(_saveLocation);
+
+                if (file != null)
+                {
+                    try
+                    {
+                        if (File.Exists(file))
+                        {
+                            int selected =
+                                MultipleChoice.Show("File already exists. Overwrite?", "No", "", "Yes");
+
+                            if (selected == 2)
+                            {
+                                SaveGame(file);
+                            }
+                        }
+                        else
+                        {
+                            SaveGame(file);
+                        }
+                    }
+                    catch (IOException)
+                    {
+                        Console.WriteLine("An error occured while saving.");
+                    }
+                }
+            }
+
+            private void SaveGame(string file)
+            {
+                _saveLocation = file;
+                
+                using (FileStream stream = new FileStream(file, FileMode.Create))
+                {
+                    stream.Write(TYPE.ToByteArray(), 0, 3);
+
+                    stream.Write(new[]
+                    {
+                        _players[0].Rounds
+                    }, 0, 1);
+
+                    foreach (Player player in _players)
+                    {
+                        byte nameLen = (byte) player.Name.Length;
+                        stream.WriteByte(nameLen);
+
+                        foreach (char c in player.Name)
+                            stream.WriteByte((byte) c);
+
+                        foreach (byte[] tricks in player.Tricks)
+                        {
+                            stream.Write(tricks, 0, 2);
+                        }
+                    }
+                }
             }
         }
     }

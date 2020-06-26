@@ -1,4 +1,6 @@
 using System;
+using System.IO;
+using System.Security.Cryptography;
 using Test.Classes;
 using Test.InputAPI;
 
@@ -49,7 +51,42 @@ namespace Test
 
         private static void LoadGame()
         {
-            // TODO
+            string file = LineEditor.RequestPath();
+
+            if (File.Exists(file))
+            {
+                using (FileStream stream = new FileStream(file, FileMode.Open))
+                {
+                    try {
+                        byte[] typeBytes = new byte[3];
+                        stream.Read(typeBytes, 0, 3);
+
+                        byte[] gameData = new byte[(int) stream.Length - 3];
+                        stream.Read(gameData, 0, gameData.Length);
+
+                        if (GameTypeMethods.TryParse(typeBytes, out GameType gameType))
+                        {
+                            dynamic game = gameType.CreateGame(gameData, file);
+                            MainMenu(game);
+                        }
+                    }
+                    catch (OverflowException)
+                    {
+                        Console.WriteLine("Invalid save file.");
+                        Console.ReadLine();
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine($"An unknown error occurred. {e.Message}");
+                        Console.ReadLine();
+                    }
+                }
+            }
+            else
+            {
+                Console.WriteLine($"File '{file}' does not exist.");
+                Console.ReadLine();
+            }
         }
         
         private static void MainMenu(dynamic game)
