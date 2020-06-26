@@ -267,7 +267,7 @@ namespace Test.Classes
 
             private void Save()
             {
-                string file = LineEditor.RequestPath(_saveLocation);
+                string file = LineEditor.RequestPath(TYPE, _saveLocation);
 
                 if (file != null)
                 {

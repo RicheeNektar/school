@@ -31,7 +31,7 @@ namespace Test
 
         private static void CreateGame()
         {
-            int typeSelection = MultipleChoice.Show("Select game", GameTypeMethods.GetAllFullNames());
+            int typeSelection = MultipleChoice.Show("Select game", GameTypeMethods.GetAllFullNames()) + 1;
             GameType gameType = (GameType) Enum.GetValues(typeof(GameType)).GetValue(typeSelection);
             Console.WriteLine();
 
@@ -51,7 +51,7 @@ namespace Test
 
         private static void LoadGame()
         {
-            string file = LineEditor.RequestPath();
+            string file = LineEditor.RequestPath(GameType.NON);
 
             if (File.Exists(file))
             {

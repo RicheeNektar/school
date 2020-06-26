@@ -7,6 +7,7 @@ namespace Test.Classes
 {
     public enum GameType
     {
+        NON,
         P10,
         WIZ
     }
@@ -77,14 +78,14 @@ namespace Test.Classes
                 Type gameType = typeof(GameType);
                 string[] keys = Enum.GetNames(gameType);
 
-                _fullNames = new string[keys.Length];
+                _fullNames = new string[keys.Length - 1];
 
-                for(int i = 0; i<keys.Length; i++)
+                for(int i = 1; i<keys.Length; i++)
                 {
                     string key = keys[i];
 
                     GameType parsedType = (GameType)Enum.Parse(gameType, key);
-                    _fullNames[i] = GetFullName(parsedType);
+                    _fullNames[i-1] = GetFullName(parsedType);
                 }
             }
             return _fullNames;

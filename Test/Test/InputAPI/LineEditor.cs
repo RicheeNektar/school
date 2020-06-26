@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using Test.Classes;
 
 namespace Test.InputAPI
 {
@@ -125,7 +126,15 @@ namespace Test.InputAPI
                     case ConsoleKey.RightArrow:
                         if (cursorLeft < value.Length) cursorLeft++;
                         break;
-
+                    
+                    case ConsoleKey.End:
+                        cursorLeft = value.Length - 1;
+                        break;
+                    
+                    case ConsoleKey.Home:
+                        cursorLeft = 0;
+                        break;
+                    
                     #endregion
 
                     #region Backspace
@@ -243,18 +252,22 @@ namespace Test.InputAPI
             return returned;
         }
         
-        public static string RequestPath(string defLocation = null)
+        public static string RequestPath(GameType gameType, string defLocation = null)
         {
             char sep = Path.DirectorySeparatorChar;
             DateTime time = DateTime.Today;
             string fileName = $"{time.Year}-{time.Month}-{time.Day}";
 
+            string defaultLocation = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + sep + fileName;
+            if (gameType != GameType.NON)
+            {
+                defaultLocation += gameType.ToString();
+            }
+            
             string[] lines = LineEditor
                 .RequestStringBatch("Enter save location", 1, null, new []
                 {
-                    defLocation ?? Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + sep 
-                                                                                        + fileName
-                                                                                        + ".p10"
+                    defLocation ?? defaultLocation
                 }, true);
 
             Console.Clear();
